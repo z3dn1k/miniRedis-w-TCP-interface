@@ -65,7 +65,6 @@ impl Db {
             use std::io::BufRead;
 
             for line in reader.lines() {
-                if let Ok(line_str) = line {
                     if let Ok(cmd) = serde_json::from_str::<AofCommand>(&line_str) {
                         match cmd {
                             AofCommand::Set { key, value } => {
@@ -89,7 +88,6 @@ impl Db {
                             }
                         }
                     }
-                }
             }
             println!("Successfully replayed appendonly.aof!");
         }

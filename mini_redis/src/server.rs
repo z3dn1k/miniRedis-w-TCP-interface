@@ -55,7 +55,7 @@ pub async fn handle_client(stream: TcpStream, db: Db) {
         }
 
         let command = parts[0].to_uppercase();
-        let mut response = String::new();
+        let mut response;
 
         match command.as_str() {
             "GET" => {
