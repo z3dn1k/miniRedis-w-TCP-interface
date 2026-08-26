@@ -13,6 +13,11 @@ jobs:
   build_and_test:
     name: Build, Lint, and Test
     runs-on: ubuntu-latest
+    
+    # MAGIC FIX: Tells GitHub to run all commands inside your subfolder
+    defaults:
+      run:
+        working-directory: ./mini_redis
 
     steps:
       - name: Checkout repository
@@ -25,12 +30,14 @@ jobs:
 
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
+        with:
+          # Tells the cache action where to find your Cargo.toml
+          workspaces: "./mini_redis -> target"
 
       - name: Check code formatting
         run: cargo fmt --all -- --check
 
       - name: Run Clippy (Linter)
-        # The '-D warnings' flag treats all warnings as errors, forcing strict quality
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Build project
