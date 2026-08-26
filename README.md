@@ -66,4 +66,4 @@ Test the core commands:
 Future planned improvements:
 * **Dockerization**: Provide a minimal `Dockerfile` for universal, environment-agnostic deployment.
 * **Expanded Command Set**: Support for list operations (`LPUSH`, `RPOP`), `PING`, and `INCR`.
-* **Benchmarking**: Publish automated throughput benchmarks using the official `redis-benchmark` tool.
+* **Benchmarking**: Publish automated throughput benchmarks using the official `redis-benchmark` tool. 
