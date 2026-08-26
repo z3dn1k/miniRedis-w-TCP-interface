@@ -83,8 +83,7 @@ impl Db {
                         }
                         AofCommand::Expire { key, secs } => {
                             if let Some(mut entry) = map.get_mut(&key) {
-                                entry.expires_at =
-                                    Some(Instant::now() + Duration::from_secs(secs));
+                                entry.expires_at = Some(Instant::now() + Duration::from_secs(secs));
                             }
                         }
                     }
