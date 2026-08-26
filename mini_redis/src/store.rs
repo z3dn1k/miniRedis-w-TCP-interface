@@ -64,30 +64,31 @@ impl Db {
             let reader = std::io::BufReader::new(file);
             use std::io::BufRead;
 
-            for line in reader.lines() {
-                    if let Ok(cmd) = serde_json::from_str::<AofCommand>(&line_str) {
-                        match cmd {
-                            AofCommand::Set { key, value } => {
-                                map.insert(
-                                    key,
-                                    Entry {
-                                        value,
-                                        expires_at: None,
-                                        last_accessed: AtomicU64::new(current_timestamp()),
-                                    },
-                                );
-                            }
-                            AofCommand::Del { key } => {
-                                map.remove(&key);
-                            }
-                            AofCommand::Expire { key, secs } => {
-                                if let Some(mut entry) = map.get_mut(&key) {
-                                    entry.expires_at =
-                                        Some(Instant::now() + Duration::from_secs(secs));
-                                }
+            // Notice we name the variable `line_str` here to match the code inside
+            for line_str in reader.lines().map_while(Result::ok) {
+                if let Ok(cmd) = serde_json::from_str::<AofCommand>(&line_str) {
+                    match cmd {
+                        AofCommand::Set { key, value } => {
+                            map.insert(
+                                key,
+                                Entry {
+                                    value,
+                                    expires_at: None,
+                                    last_accessed: AtomicU64::new(current_timestamp()),
+                                },
+                            );
+                        }
+                        AofCommand::Del { key } => {
+                            map.remove(&key);
+                        }
+                        AofCommand::Expire { key, secs } => {
+                            if let Some(mut entry) = map.get_mut(&key) {
+                                entry.expires_at =
+                                    Some(Instant::now() + Duration::from_secs(secs));
                             }
                         }
                     }
+                }
             }
             println!("Successfully replayed appendonly.aof!");
         }
