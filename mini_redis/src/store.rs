@@ -1,7 +1,7 @@
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 
@@ -173,11 +173,14 @@ impl Db {
             if entry.is_expired() {
                 return None;
             }
-            
-            // LOCK-FREE UPDATE! 
+
+            // LOCK-FREE UPDATE!
             // We record that this key was just used without locking the map.
-            entry.value().last_accessed.store(current_timestamp(), Ordering::Relaxed);
-            
+            entry
+                .value()
+                .last_accessed
+                .store(current_timestamp(), Ordering::Relaxed);
+
             return Some(entry.value().value.clone());
         }
         None
@@ -199,10 +202,12 @@ impl Db {
                 return false;
             }
             entry.expires_at = Some(Instant::now() + Duration::from_secs(secs));
-            
+
             // Updating TTL counts as usage
-            entry.last_accessed.store(current_timestamp(), Ordering::Relaxed);
-            
+            entry
+                .last_accessed
+                .store(current_timestamp(), Ordering::Relaxed);
+
             self.log_command(AofCommand::Expire {
                 key: key.to_string(),
                 secs,

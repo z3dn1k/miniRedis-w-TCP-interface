@@ -90,7 +90,8 @@ pub async fn handle_client(stream: TcpStream, db: Db) {
             // NEW: EXPIRE command parser
             "EXPIRE" => {
                 if parts.len() < 3 {
-                    response = "-ERR wrong number of arguments for 'expire' command\r\n".to_string();
+                    response =
+                        "-ERR wrong number of arguments for 'expire' command\r\n".to_string();
                 } else {
                     match parts[2].parse::<u64>() {
                         Ok(secs) => {
@@ -102,7 +103,8 @@ pub async fn handle_client(stream: TcpStream, db: Db) {
                             };
                         }
                         Err(_) => {
-                            response = "-ERR value is not an integer or out of range\r\n".to_string();
+                            response =
+                                "-ERR value is not an integer or out of range\r\n".to_string();
                         }
                     }
                 }
@@ -115,7 +117,12 @@ pub async fn handle_client(stream: TcpStream, db: Db) {
             }
         }
 
-        if reader.get_mut().write_all(response.as_bytes()).await.is_err() {
+        if reader
+            .get_mut()
+            .write_all(response.as_bytes())
+            .await
+            .is_err()
+        {
             break;
         }
     }
