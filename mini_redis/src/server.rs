@@ -108,10 +108,7 @@ pub async fn handle_client(stream: TcpStream, db: Db) {
                 }
             }
             "SAVE" => {
-                match db.save() {
-                    Ok(_) => response = "+OK\r\n".to_string(),
-                    Err(e) => response = format!("-ERR could not save: {}\r\n", e),
-                }
+                response = "-ERR manual save is disabled (AOF is enabled)\r\n".to_string();
             }
             _ => {
                 response = format!("-ERR unknown command '{}'\r\n", command);

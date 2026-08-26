@@ -1,2 +1,2 @@
 target/
-mini_redis/dump.json
+mini_redis/appendonly.aof

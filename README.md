@@ -4,14 +4,22 @@ A lightweight, high-performance, in-memory key-value data store written in Rust.
 
 This project implements a fully asynchronous TCP server using Tokio and natively supports the Redis Serialization Protocol (RESP). Because it speaks the official protocol, it can be accessed directly using standard Redis clients like `redis-cli`.
 
-## Current Features
+## Architecture Highlights
 
-* **Asynchronous TCP Server**: Built on top of the Tokio runtime, capable of handling concurrent client connections efficiently.
-* **RESP Protocol Support**: Native parsing and formatting of the Redis Serialization Protocol (binary-safe arrays and bulk strings).
-* **Core Data Operations**: O(1) time complexity for `SET`, `GET`, and `DEL` commands.
-* **Time-To-Live (TTL)**: Support for the `EXPIRE` command.
-* **Active Memory Management**: A dedicated background task that continuously sweeps the database to purge expired keys and prevent memory leaks.
-* **Disk Persistence**: Includes a `SAVE` command that securely calculates remaining TTLs and serializes the in-memory state to a `dump.json` file for recovery across server restarts.
+This project was built with production-grade backend engineering patterns:
+
+* **Sharded Concurrency (`DashMap`)**: Avoids global lock contention by dividing the key-value store into multiple independently locked shards, allowing thousands of concurrent clients to read and write simultaneously.
+* **Non-Blocking AOF Persistence**: Utilizes Tokio's MPSC channels to offload file I/O. Mutating commands are instantly sent to a background task that continuously appends them to a Write-Ahead Log (`appendonly.aof`), guaranteeing data durability without blocking the main event loop.
+* **Approximated LRU Eviction**: Implements a memory-bound cache eviction policy (max 10,000 keys). It uses random sampling and lock-free read tracking via `AtomicU64`, ensuring that `GET` operations remain strictly O(1) and require zero write-locks.
+* **Continuous Integration**: Automated GitHub Actions pipeline that enforces code formatting, strict linting (`cargo clippy -D warnings`), and executes tests on every push.
+
+## Core Features
+
+* **Asynchronous TCP Server**: Built on top of the Tokio runtime.
+* **RESP Protocol Support**: Native parsing and formatting of binary-safe arrays and bulk strings.
+* **Core Commands**: O(1) time complexity for `SET`, `GET`, and `DEL`.
+* **Time-To-Live (TTL)**: Support for the `EXPIRE` command, backed by an active sweeper task that periodically purges expired keys to prevent memory leaks.
+* **Crash Recovery**: Automatically replays the `.aof` transaction log on startup to reconstruct the database state.
 
 ## Getting Started
 
@@ -47,16 +55,15 @@ Test the core commands:
 "truck"
 127.0.0.1:6379> EXPIRE vehicle 10
 :1
-127.0.0.1:6379> SAVE
-+OK
+127.0.0.1:6379> DEL vehicle
+:1
 ```
 
 *(Alternatively, you can connect using raw TCP via `nc 127.0.0.1 6379` or `telnet 127.0.0.1 6379`)*.
 
-## Roadmap & Planned Architecture Improvements
+## Roadmap
 
-While the current version is fully functional, I am actively planning the following system architecture upgrades to make the store production-ready:
-
-* **Append-Only File (AOF)**: Transitioning from JSON snapshots to a Write-Ahead Log. This will ensure that every mutating operation is immediately appended to disk, providing crash-resistant durability without losing data between `SAVE` commands.
-* **Sharded Concurrency**: Replacing the single global `RwLock<HashMap>` with a sharded map architecture (e.g., using concepts similar to `dashmap`). This will drastically reduce lock contention when thousands of concurrent clients attempt to write data simultaneously.
-* **LRU Eviction Policy (Least Recently Used)**: Implementing a memory-bound eviction algorithm to automatically delete the least recently accessed keys when the server reaches its maximum memory capacity.
+Future planned improvements:
+* **Dockerization**: Provide a minimal `Dockerfile` for universal, environment-agnostic deployment.
+* **Expanded Command Set**: Support for list operations (`LPUSH`, `RPOP`), `PING`, and `INCR`.
+* **Benchmarking**: Publish automated throughput benchmarks using the official `redis-benchmark` tool.
